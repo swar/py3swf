@@ -10,19 +10,19 @@ def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 setup(
-    name='pyswf',
+    name='py3swf',
     version='1.5.5',
     description='SWF Parsing Utilities',
     long_description=read('README.md'),
-    keywords = "swf parser parsing decompile utilities",
+    keywords="swf parser parsing decompile utilities",
 
     author='Tim Knip, Converted by: Swar Patel',
     author_email='tim@floorplanner.com',
     url='https://github.com/swar/pyswf',
 
-    install_requires = ["lxml>=3.3.0", "Pillow>=2.3.0", "pylzma>=0.4.6", "six"],
+    install_requires=["lxml>=3.3.0", "Pillow>=2.3.0", "pylzma>=0.4.6", "six"],
     packages=find_packages(),
-    license = "MIT",
+    license="MIT",
     classifiers=[
         "Development Status :: 4 - Beta",
         "Topic :: Utilities",
