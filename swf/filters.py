@@ -1,7 +1,4 @@
-from __future__ import absolute_import
 from .utils import ColorUtils
-from six.moves import map
-from six.moves import range
 
 class Filter(object):
     """

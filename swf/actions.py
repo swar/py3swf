@@ -1,6 +1,4 @@
 
-from __future__ import absolute_import
-import six
 class Action(object):
     def __init__(self, code, length):
         self._code = code
@@ -179,7 +177,7 @@ class ActionAnd(Action4):
 # urgh! some 100 to go...
 
 ActionTable = {}
-for name, value in six.iteritems(dict(locals())):
+for name, value in dict(locals()).items():
     if type(value) == type and issubclass(value, Action) and hasattr(value, 'CODE'):
         ActionTable[value.CODE] = value
 

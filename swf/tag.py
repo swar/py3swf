@@ -1,17 +1,17 @@
-from __future__ import absolute_import
 from .consts import *
 from .data import *
 from .utils import *
 from .stream import *
-import datetime
-from six.moves import range
 try:
     import Image
 except ImportError:
     from PIL import Image
 import struct
-from io import BytesIO
 
+try:
+    import cStringIO as StringIO
+except ImportError:
+    from io import StringIO, BytesIO
 
 class TagFactory(object):
     @classmethod
@@ -539,7 +539,7 @@ class TagJPEGTables(DefinitionTag):
 
     def __init__(self):
         super(TagJPEGTables, self).__init__()
-        self.jpegTables = BytesIO()
+        self.jpegTables = StringIO.StringIO()
 
     @property
     def name(self):
@@ -829,7 +829,7 @@ class TagDefineBitsLossless(DefinitionTag):
     """
     TYPE = 20
     bitmapData = None
-    image_buffer = b""
+    image_buffer = ""
     bitmap_format = 0
     bitmap_width = 0
     bitmap_height = 0
@@ -841,7 +841,7 @@ class TagDefineBitsLossless(DefinitionTag):
 
     def parse(self, data, length, version=1):
         import zlib
-        self.image_buffer = b""
+        self.image_buffer = ""
         self.characterId = data.readUI16()
         self.bitmap_format = data.readUI8()
         self.bitmap_width = data.readUI16()
@@ -855,7 +855,7 @@ class TagDefineBitsLossless(DefinitionTag):
         # decompress zlib encoded bytes
         compressed_length = len(self.zlib_bitmap_data)
         zip = zlib.decompressobj()
-        temp = BytesIO()
+        temp = StringIO.StringIO()
         temp.write(zip.decompress(self.zlib_bitmap_data))
         temp.seek(0, 2)
         uncompressed_length = temp.tell()
@@ -869,7 +869,7 @@ class TagDefineBitsLossless(DefinitionTag):
 
         is_lossless2 = (type(self) == TagDefineBitsLossless2)
         im = None
-        self.bitmapData = BytesIO()
+        self.bitmapData = StringIO.StringIO()
 
         indexed_colors = []
         if self.bitmap_format == BitmapFormat.BIT_8:
@@ -881,13 +881,13 @@ class TagDefineBitsLossless(DefinitionTag):
                 indexed_colors.append(struct.pack("BBBB", r, g, b, a))
 
             # create the image buffer
-            s = BytesIO()
-            for i in range(t):
+            s = StringIO.StringIO()
+            for i in xrange(t):
                 s.write(indexed_colors[ord(temp.read(1))])
             self.image_buffer = s.getvalue()
             s.close()
 
-            im = Image.frombytes("RGBA", (self.padded_width, self.bitmap_height), self.image_buffer)
+            im = Image.fromstring("RGBA", (self.padded_width, self.bitmap_height), self.image_buffer)
             im = im.crop((0, 0, self.bitmap_width, self.bitmap_height))
 
         elif self.bitmap_format == BitmapFormat.BIT_15:
@@ -896,7 +896,7 @@ class TagDefineBitsLossless(DefinitionTag):
             # we have no padding, since PIX24s are 32-bit aligned
             t = self.bitmap_width * self.bitmap_height
             # read PIX24's
-            s = BytesIO()
+            s = StringIO.StringIO()
             for i in range(0, t):
                 if not is_lossless2:
                     temp.read(1) # reserved, always 0
@@ -906,9 +906,9 @@ class TagDefineBitsLossless(DefinitionTag):
                 b = ord(temp.read(1))
                 s.write(struct.pack("BBBB", r, g, b, a))
             self.image_buffer = s.getvalue()
-            im = Image.frombytes("RGBA", (self.bitmap_width, self.bitmap_height), self.image_buffer)
+            im = Image.fromstring("RGBA", (self.bitmap_width, self.bitmap_height), self.image_buffer)
         else:
-            raise Exception("unhandled bitmap format! %s %d" % (BitmapFormat.tobytes(self.bitmap_format), self.bitmap_format))
+            raise Exception("unhandled bitmap format! %s %d" % (BitmapFormat.tostring(self.bitmap_format), self.bitmap_format))
 
         if not im is None:
             im.save(self.bitmapData, "PNG")
@@ -1214,7 +1214,7 @@ class TagDefineBitsJPEG3(TagDefineBitsJPEG2):
     """
     TYPE = 35
     def __init__(self):
-        self.bitmapAlphaData = BytesIO()
+        self.bitmapAlphaData = StringIO.StringIO()
         super(TagDefineBitsJPEG3, self).__init__()
 
     @property
@@ -1237,8 +1237,8 @@ class TagDefineBitsJPEG3(TagDefineBitsJPEG2):
         import zlib
         self.characterId = data.readUI16()
         alphaOffset = data.readUI32()
-        self.bitmapAlphaData = BytesIO()
-        self.bitmapData = BytesIO()
+        self.bitmapAlphaData = StringIO.StringIO()
+        self.bitmapData = StringIO.StringIO()
         self.bitmapData.write(data.f.read(alphaOffset))
         self.bitmapData.seek(0)
         self.bitmapType = ImageUtils.get_image_type(self.bitmapData)
@@ -1248,7 +1248,7 @@ class TagDefineBitsJPEG3(TagDefineBitsJPEG2):
             self.bitmapAlphaData.seek(0)
             # decompress zlib encoded bytes
             zip = zlib.decompressobj()
-            temp = BytesIO()
+            temp = StringIO.StringIO()
             temp.write(zip.decompress(self.bitmapAlphaData.read()))
             temp.seek(0)
             self.bitmapAlphaData = temp
@@ -1458,7 +1458,7 @@ class TagDefineFont2(TagDefineFont):
         self.languageCode = data.readLANGCODE()
 
         fontNameLen = data.readUI8()
-        fontNameRaw = BytesIO()
+        fontNameRaw = StringIO.StringIO()
         fontNameRaw.write(data.f.read(fontNameLen))
         fontNameRaw.seek(0)
         self.fontName = fontNameRaw.read()
@@ -1928,7 +1928,7 @@ class TagDefineSound(Tag):
         self.soundChannels = data.readUB(1)
         self.soundSamples = data.readUI32()
         # used 2 + 1 + 4 bytes here
-        self.soundData = BytesIO(data.read(length - 7))
+        self.soundData = StringIO.StringIO(data.read(length - 7))
 
     def __str__(self):
         s = super(TagDefineSound, self).__str__()
@@ -2077,7 +2077,7 @@ class TagSoundStreamBlock(Tag):
     def parse(self, data, length, version=1):
         # unfortunately we can't see our associated SoundStreamHead from here,
         # so just stash the data
-        self.data = BytesIO(data.read(length))
+        self.data = StringIO.StringIO(data.read(length))
 
     def complete_parse_with_header(self, head):
         stream = SWFStream(self.data)
@@ -2144,7 +2144,7 @@ class TagProductInfo(Tag):
         s += " product: %s" % ProductKind.tostring(self.product)
         s += " edition: %s" % ProductEdition.tostring(self.edition)
         s += " major.minor.build: %d.%d.%d" % (self.majorVersion, self.minorVersion, self.build)
-        s += " compileTime: %d (%s)" % (self.compileTime, datetime.datetime.fromtimestamp(self.compileTime//1000.0).ctime())
+        s += " compileTime: %d" % (self.compileTime)
         return s
 
 class TagScriptLimits(Tag):
@@ -2219,7 +2219,7 @@ class TagExportAssets(Tag):
 
     def parse(self, data, length, version=1):
         self.count = data.readUI16()
-        self.exports = [data.readEXPORT() for i in range(self.count)]
+        self.exports = [data.readEXPORT() for i in xrange(self.count)]
 
     def __str__(self):
         s = super(TagExportAssets, self).__str__()
@@ -2641,7 +2641,7 @@ class TagDefineMorphShape2(TagDefineMorphShape):
 
 if __name__ == '__main__':
     # some table checks
-    for x in range(256):
+    for x in xrange(256):
         y = TagFactory.create(x)
         if y:
             assert y.type == x, y.name + ' is misnamed'

@@ -1,10 +1,7 @@
-from __future__ import absolute_import
 import struct, math
 from .data import *
 from .actions import *
 from .filters import SWFFilterFactory
-from six.moves import range
-from functools import reduce
 
 class SWFStream(object):
     """
@@ -51,7 +48,7 @@ class SWFStream(object):
     
     def _read_bytes_aligned(self, bytes):
         buf = self.f.read(bytes)
-        return reduce(lambda x, y: x << 8 | y, buf, 0)
+        return reduce(lambda x, y: x << 8 | ord(y), buf, 0)
     
     def readbits(self, bits):
         """
@@ -64,7 +61,7 @@ class SWFStream(object):
         
         # fast byte-aligned path
         if bits % 8 == 0 and self._bits_pending == 0:
-            return self._read_bytes_aligned(bits // 8)
+            return self._read_bytes_aligned(bits / 8)
         
         out = 0
         masks = self._masks
@@ -97,7 +94,7 @@ class SWFStream(object):
                 continue
             
             r = self.f.read(1)
-            if r == b'':
+            if r == '':
                 raise EOFError
             self._partial_byte = ord(r)
             self._bits_pending = 8
@@ -368,11 +365,11 @@ class SWFStream(object):
     def readString(self):
         """ Read a string """
         s = self.f.read(1)
-        string = b""
+        string = ""
         while ord(s) > 0:
             string += s
             s = self.f.read(1)
-        return string.decode()
+        return string
     
     def readFILTER(self):
         """ Read a SWFFilter """
@@ -384,7 +381,7 @@ class SWFStream(object):
     def readFILTERLIST(self):
         """ Read a length-prefixed list of FILTERs """
         number = self.readUI8()
-        return [self.readFILTER() for _ in range(number)]
+        return [self.readFILTER() for _ in xrange(number)]
     
     def readZONEDATA(self):
         """ Read a SWFZoneData """
@@ -443,14 +440,14 @@ class SWFStream(object):
         count = self.readUI8()
         if count == 0xff:
             count = self.readUI16()
-        return [self.readMORPHFILLSTYLE() for _ in range(count)]
+        return [self.readMORPHFILLSTYLE() for _ in xrange(count)]
         
     def readMORPHLINESTYLEARRAY(self, version):
         count = self.readUI8()
         if count == 0xff:
             count = self.readUI16()
         kind = self.readMORPHLINESTYLE if version == 1 else self.readMORPHLINESTYLE2
-        return [kind() for _ in range(count)]
+        return [kind() for _ in xrange(count)]
         
     def readraw_tag(self):
         """ Read a SWFRawTag """

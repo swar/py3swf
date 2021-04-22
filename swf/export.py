@@ -1,7 +1,6 @@
 """
 This module defines exporters for the SWF fileformat.
 """
-from __future__ import absolute_import
 from .consts import *
 from .geom import *
 from .utils import *
@@ -11,14 +10,14 @@ from .filters import *
 from lxml import objectify
 from lxml import etree
 import base64
-from six.moves import map
-from six.moves import range
 try:
     import Image
 except ImportError:
     from PIL import Image
-from io import BytesIO
-from six.moves import cStringIO
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from io import StringIO
 import math
 import re
 import copy
@@ -406,7 +405,7 @@ class BaseExporter(object):
         self.export_display_list(self.get_display_tags(swf.tags))
 
     def export_define_bits(self, tag):
-        png_buffer = BytesIO()
+        png_buffer = StringIO()
         image = None
         if isinstance(tag, TagDefineBitsJPEG3):
 
@@ -426,14 +425,14 @@ class BaseExporter(object):
                         alpha = ord(tag.bitmapAlphaData.read(1))
                         rgb = list(image_data[i])
                         buff += struct.pack("BBBB", rgb[0], rgb[1], rgb[2], alpha)
-                    image = Image.frombytes("RGBA", (image_width, image_height), buff)
+                    image = Image.fromstring("RGBA", (image_width, image_height), buff)
         elif isinstance(tag, TagDefineBitsJPEG2):
             tag.bitmapData.seek(0)
             image = Image.open(tag.bitmapData)
         else:
             tag.bitmapData.seek(0)
             if self.jpegTables is not None:
-                buff = BytesIO()
+                buff = StringIO()
                 self.jpegTables.seek(0)
                 buff.write(self.jpegTables.read())
                 buff.write(tag.bitmapData.read())
@@ -546,7 +545,7 @@ class SVGExporter(BaseExporter):
         return self._serialize()
 
     def _serialize(self):
-        return cStringIO(etree.tostring(self.svg,
+        return BytesIO(etree.tostring(self.svg,
                 encoding="UTF-8", xml_declaration=True))
 
     def export_define_sprite(self, tag, parent=None):
@@ -811,36 +810,11 @@ class SVGExporter(BaseExporter):
 class SingleShapeSVGExporter(SVGExporter):
     """
     An SVG exporter which knows how to export a single shape.
-    NB: This class is here just for backward compatibility.
-    Use SingleShapeSVGExporterMixin instead to mix with other functionality.
     """
     def __init__(self, margin=0):
         super(SingleShapeSVGExporter, self).__init__(margin = margin)
 
     def export_single_shape(self, shape_tag, swf):
-        class MySingleShapeSVGExporter(SingleShapeSVGExporterMixin, SVGExporter):
-            pass
-        exporter = MySingleShapeSVGExporter()
-        return exporter.export(swf, shape=shape_tag)
-
-class SingleShapeSVGExporterMixin(object):
-    def export(self, swf, shape, **export_opts):
-        """ Exports the specified shape of the SWF to SVG.
-
-        @param swf   The SWF.
-        @param shape Which shape to export, either by characterId(int) or as a Tag object.
-        """
-
-        # If `shape` is given as int, find corresponding shape tag.
-        if isinstance(shape, Tag):
-            shape_tag = shape
-        else:
-            shapes = [x for x in swf.all_tags_of_type((TagDefineShape, TagDefineSprite)) if x.characterId == shape]
-            if len(shapes):
-                shape_tag = shapes[0]
-            else:
-                raise Exception("Shape %s not found" % shape)
-
         from swf.movie import SWF
 
         # find a typical use of this shape
@@ -873,52 +847,7 @@ class SingleShapeSVGExporterMixin(object):
         stunt_swf = SWF()
         stunt_swf.tags = tags_to_export
 
-        return super(SingleShapeSVGExporterMixin, self).export(stunt_swf, **export_opts)
-
-class FrameSVGExporterMixin(object):
-    def export(self, swf, frame, **export_opts):
-        """ Exports a frame of the specified SWF to SVG.
-
-        @param swf   The SWF.
-        @param frame Which frame to export, by 0-based index (int)
-        """
-        self.wanted_frame = frame
-        return super(FrameSVGExporterMixin, self).export(swf, *export_opts)
-
-    def get_display_tags(self, tags, z_sorted=True):
-
-        current_frame = 0
-        frame_tags = dict() # keys are depths, values are placeobject tags
-        for tag in tags:
-            if isinstance(tag, TagShowFrame):
-                if current_frame == self.wanted_frame:
-                    break
-                current_frame += 1
-            elif isinstance(tag, TagPlaceObject):
-                if tag.hasMove:
-                    orig_tag = frame_tags.pop(tag.depth)
-
-                    if not tag.hasCharacter:
-                        tag.characterId = orig_tag.characterId
-                    # this is for NamesSVGExporterMixin
-                    if not tag.hasName:
-                        tag.instanceName = orig_tag.instanceName
-                frame_tags[tag.depth] = tag
-            elif isinstance(tag, TagRemoveObject):
-                del frame_tags[tag.depth]
-
-        return super(FrameSVGExporterMixin, self).get_display_tags(frame_tags.values(), z_sorted)
-
-class NamesSVGExporterMixin(object):
-    '''
-    Add class="n-<name>" to SVG elements for tags that have an instanceName.
-    '''
-    def export_display_list_item(self, tag, parent=None):
-        use = super(NamesSVGExporterMixin, self).export_display_list_item(tag, parent)
-        if hasattr(tag, 'instanceName') and tag.instanceName is not None:
-            use.set('class', 'n-%s' % tag.instanceName)
-        return use
-
+        return super(SingleShapeSVGExporter, self).export(stunt_swf)
 
 class SVGFilterFactory(object):
     # http://commons.oreilly.com/wiki/index.php/SVG_Essentials/Filters
@@ -1063,7 +992,7 @@ class SVGBounds(object):
     def _build_matrix(self, transform):
         if transform.find("matrix") >= 0:
             raw = str(transform).replace("matrix(", "").replace(")", "")
-            f = list(map(float, re.split("\s+|,", raw)))
+            f = map(float, re.split("\s+|,", raw))
             return Matrix2(f[0], f[1], f[2], f[3], f[4], f[5])
 
     def _calc_combined_matrix(self):
@@ -1103,7 +1032,7 @@ def _encode_jpeg(data):
     return "data:image/jpeg;base64," + base64.encodestring(data)[:-1]
 
 def _encode_png(data):
-    return "data:image/png;base64," + base64.encodestring(data)[:-1]
+    return "data:image/png;base64," + base64.encodestring(data)[:-1].decode()
 
 def _swf_matrix_to_matrix(swf_matrix=None, need_scale=False, need_translate=True, need_rotation=False, unit_div=20.0):
 

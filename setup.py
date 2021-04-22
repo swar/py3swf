@@ -16,9 +16,9 @@ setup(
     long_description=read('README.md'),
     keywords = "swf parser parsing decompile utilities",
 
-    author='Tim Knip',
+    author='Tim Knip, Converted by: Swar Patel',
     author_email='tim@floorplanner.com',
-    url='https://github.com/timknip/pyswf',
+    url='https://github.com/swar/pyswf',
 
     install_requires = ["lxml>=3.3.0", "Pillow>=2.3.0", "pylzma>=0.4.6", "six"],
     packages=find_packages(),

@@ -1,12 +1,13 @@
 """
 SWF
 """
-from __future__ import absolute_import
 from .tag import SWFTimelineContainer
 from .stream import SWFStream
 from .export import SVGExporter
-from six.moves import cStringIO
-from io import BytesIO
+try:
+    import cStringIO as StringIO
+except ImportError:
+    from io import StringIO, BytesIO
 
 class SWFHeaderException(Exception):
     """ Exception raised in case of an invalid SWFHeader """
