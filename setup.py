@@ -18,7 +18,7 @@ setup(
 
     author='Tim Knip, Converted by: Swar Patel',
     author_email='tim@floorplanner.com',
-    url='https://github.com/swar/pyswf',
+    url='https://github.com/swar/py3swf',
 
     install_requires=["lxml>=3.3.0", "Pillow>=2.3.0", "pylzma>=0.4.6", "six"],
     packages=find_packages(),
