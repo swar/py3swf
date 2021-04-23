@@ -1,5 +1,13 @@
+from __future__ import absolute_import
+from __future__ import division
+from builtins import map
+from builtins import range
+from past.utils import old_div
+from builtins import object
 from .consts import *
 from .utils import *
+from six.moves import map
+from six.moves import range
 
 class _dumb_repr(object):
     def __repr__(self):
@@ -70,7 +78,7 @@ class SWFShape(_dumb_repr):
     def export(self, handler=None):
         self._create_edge_maps()
         if handler is None:
-            from export import SVGShapeExporter
+            from .export import SVGShapeExporter
             handler = SVGShapeExporter()
         handler.begin_shape()
         for i in range(0, self.num_groups):
@@ -1001,7 +1009,7 @@ class SWFRectangle(_dumb_repr):
         return (self.xmax - self.xmin, self.ymax - self.ymin)
 
     def __str__(self):
-        return "[xmin: %d xmax: %d ymin: %d ymax: %d]" % (self.xmin/20, self.xmax/20, self.ymin/20, self.ymax/20)
+        return "[xmin: %d xmax: %d ymin: %d ymax: %d]" % (old_div(self.xmin,20), old_div(self.xmax,20), old_div(self.ymin,20), old_div(self.ymax,20))
 
 class SWFColorTransform(_dumb_repr):
     def __init__(self, data=None):
@@ -1340,7 +1348,7 @@ class SWFSoundInfo(_dumb_repr):
         self.outPoint = data.readUI32() if self.hasOutPoint else None
         self.loopCount = data.readUI16() if self.hasLoops else None
         self.envPointCount = data.readUI8() if self.hasEnvelope else None
-        self.envelopePoints = [data.readSOUNDENVELOPE() for x in xrange(self.envPointCount)] if self.hasEnvelope else None
+        self.envelopePoints = [data.readSOUNDENVELOPE() for x in range(self.envPointCount)] if self.hasEnvelope else None
 
     def __str__(self):
         return "[SWFSoundInfo]"
