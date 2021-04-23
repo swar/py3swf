@@ -1,7 +1,10 @@
-import consts
-import tag
+from __future__ import absolute_import
+from __future__ import division
+from past.utils import old_div
+from . import consts
+from . import tag
 import wave
-import stream
+from . import stream
 
 supportedCodecs = (
     consts.AudioCodec.MP3,
@@ -48,7 +51,7 @@ def get_wave_for_header(header, output):
     w = wave.open(output, 'w')
     w.setframerate(consts.AudioSampleRate.Rates[header.soundRate])
     w.setnchannels(consts.AudioChannels.Channels[header.soundChannels])
-    w.setsampwidth(consts.AudioSampleSize.Bits[header.soundSampleSize] / 8)
+    w.setsampwidth(old_div(consts.AudioSampleSize.Bits[header.soundSampleSize], 8))
     return w
     
 def write_stream_to_file(stream, output):

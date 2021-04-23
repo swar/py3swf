@@ -1,13 +1,17 @@
+from __future__ import absolute_import
+from __future__ import division
+from builtins import object
+from past.utils import old_div
 from .consts import BitmapType
 import math
 
 class NumberUtils(object):
     @classmethod
     def round_pixels_20(cls, pixels):
-        return round(pixels * 100) / 100
+        return old_div(round(pixels * 100), 100)
     @classmethod
     def round_pixels_400(cls, pixels):
-        return round(pixels * 10000) / 10000
+        return old_div(round(pixels * 10000), 10000)
  
 class ColorUtils(object):
     @classmethod

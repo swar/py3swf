@@ -1,4 +1,10 @@
+from __future__ import absolute_import
+from builtins import map
+from builtins import range
+from builtins import object
 from .utils import ColorUtils
+from six.moves import map
+from six.moves import range
 
 class Filter(object):
     """

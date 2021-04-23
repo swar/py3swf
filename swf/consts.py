@@ -1,4 +1,5 @@
 
+from builtins import object
 class Enum(object):
     @classmethod
     def tostring(cls, type):
