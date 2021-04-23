@@ -11,7 +11,7 @@ def read(fname):
 
 setup(
     name='py3swf',
-    version='1.5.5',
+    version='1.5.6',
     description='SWF Parsing Utilities',
     long_description=read('README.md'),
     keywords="swf parser parsing decompile utilities",
